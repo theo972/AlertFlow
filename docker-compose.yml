@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/app
+    volumes: ["./api:/app"]
+    working_dir: /app
+    depends_on: [db]
+    ports: ["8080:8080"]
+    command: php -S 0.0.0.0:8080 -t public
+
+  analytics:
+    build: ./analytics
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/app
+    volumes: ["./analytics:/app"]
+    working_dir: /app
+    depends_on: [db]
+    ports: ["8082:8082"]
+
+  web:
+    build: ./web
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_METRICS_URL: http://localhost:8082
+    volumes: ["./web:/app"]
+    working_dir: /app
+    depends_on: [api]
+    ports: ["5173:5173"]
+    command: npm run dev -- --host --port 5173
