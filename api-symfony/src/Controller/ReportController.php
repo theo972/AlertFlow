@@ -9,10 +9,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/report')]
+#[Route('/api/report')]
 final class ReportController extends AbstractApiController
 {
-    #[Route('/', methods: ['GET'])]
+    #[Route('', methods: ['GET'])]
     public function list(Request $r): JsonResponse
     {
         $size   = max(1, min(100, (int)$r->query->get('size', 20)));
