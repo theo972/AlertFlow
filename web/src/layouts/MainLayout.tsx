@@ -1,7 +1,7 @@
 // src/layouts/MainLayout.tsx
 import React from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/user-context";
-import { useNavigate, Outlet } from "react-router-dom";
 import "../styles/main-layout.scss";
 
 type ActiveKey = "dashboard" | "tickets" | "users" | "settings";
@@ -16,8 +16,9 @@ function getActiveFromLocation(pathname: string): ActiveKey {
 export default function MainLayout() {
     const { logout } = useUser();
     const navigate = useNavigate();
-    const pathname = window.location.pathname;
-    const active = getActiveFromLocation(pathname);
+    const location = useLocation();
+
+    const active = getActiveFromLocation(location.pathname);
 
     const handleLogout = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,6 +28,9 @@ export default function MainLayout() {
 
     const navClass = (key: ActiveKey) =>
         "nav-item" + (active === key ? " nav-item-active" : "");
+
+    const iconClass = (key: ActiveKey) =>
+        "nav-item-icon" + (active === key ? " nav-item-icon-primary" : "");
 
     return (
         <div className="layout">
@@ -43,7 +47,7 @@ export default function MainLayout() {
                         className={navClass("dashboard")}
                         onClick={() => navigate("/")}
                     >
-                        <div className="nav-item-icon nav-item-icon-primary" />
+                        <div className={iconClass("dashboard")} />
                         <span>Dashboard</span>
                     </button>
 
@@ -51,17 +55,20 @@ export default function MainLayout() {
                         className={navClass("tickets")}
                         onClick={() => navigate("/tickets")}
                     >
-                        <div className="nav-item-icon" />
+                        <div className={iconClass("tickets")} />
                         <span>Tickets</span>
                     </button>
 
-                    <button className={navClass("users")}>
-                        <div className="nav-item-icon" />
+                    <button
+                        className={navClass("users")}
+                        onClick={() => navigate("/users")}
+                    >
+                        <div className={iconClass("users")} />
                         <span>Users</span>
                     </button>
 
                     <button className={navClass("settings")}>
-                        <div className="nav-item-icon" />
+                        <div className={iconClass("settings")} />
                         <span>Settings</span>
                     </button>
                 </nav>
@@ -77,10 +84,7 @@ export default function MainLayout() {
                 <header className="topbar">
                     <div className="topbar-search">
                         <div className="topbar-search-inner">
-                            <input
-                                className="topbar-search-input"
-                                placeholder="Search tickets, users..."
-                            />
+                            <input className="topbar-search-input" placeholder="Search tickets, users..."/>
                             <span className="topbar-search-icon" />
                         </div>
                     </div>

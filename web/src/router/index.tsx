@@ -5,6 +5,7 @@ import RegisterPage from "../app/auth/RegisterPage.tsx";
 import DashboardPage from "../app/dashboard/DashboardPage.tsx";
 import TicketsPage from "../app/tickets/TicketsPage.tsx";
 import MainLayout from "../layouts/MainLayout.tsx";
+import UsersPage from "../app/users/UsersPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
                 children: [
                     { path: "/", element: <DashboardPage /> },
                     { path: "/tickets", element: <TicketsPage /> },
+                    { path: "/users", element: <UsersPage /> }
                 ],
             },
         ],

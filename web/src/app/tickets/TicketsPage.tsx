@@ -3,6 +3,7 @@ import {DataTable} from "../../components/table/DataTable.tsx";
 import {PriorityBadge} from "./components/PriorityBadge.tsx";
 import {StatusBadge} from "./components/StatusBadge.tsx";
 import {Badge} from "../../components/ui/Badge.tsx";
+import {FilterBar} from "../../components/ui/FilterBar.tsx";
 import type {DataTableColumn} from "../../types/data-table.ts";
 import type {Priority, Status, Ticket} from "./types/ticket-types.ts";
 import "../../styles/tickets.scss";
@@ -176,19 +177,13 @@ export default function TicketsPage() {
                     <h1 className="text-2xl font-semibold tracking-tight">Ticketing</h1>
                     <p className="mt-1 text-sm text-slate-400 py-2">
                         You have{" "}
-                        <span className="font-semibold text-slate-100">
-              {pendingCount} tickets
-            </span>{" "}
+                        <span className="font-semibold text-slate-100">{pendingCount} tickets
+                        </span>{" "}
                         in{" "}
                         <Badge className="bg-slate-700/80 text-slate-100">To Do</Badge> and{" "}
-                        <span className="font-semibold text-slate-100">
-              {inProgressCount}
-            </span>{" "}
+                        <span className="font-semibold text-slate-100">{inProgressCount}</span>{" "}
                         in{" "}
-                        <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                            In Progress
-                        </Badge>
-                        .
+                        <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/30">In Progress</Badge>
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
                         Also {testingCount}{" "}
@@ -199,7 +194,6 @@ export default function TicketsPage() {
                         <Badge className="bg-sky-500/10 text-sky-300 border border-sky-500/30">
                             For Release
                         </Badge>
-                        .
                     </p>
                 </div>
 
@@ -216,70 +210,57 @@ export default function TicketsPage() {
             {/* CARD FILTRES + TABLE */}
             <div className="block-card">
                 {/* Filtres + search */}
-                <div className="mb-4 flex flex-wrap items-center gap-3">
-                    <div className="relative flex-1 min-w-[200px] max-w-md">
-                        <input
-                            type="text"
-                            placeholder="Search ticket ID or title..."
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-10 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-500" />
-                    </div>
-
-                    <select
-                        className="h-9 rounded-lg border border-slate-700 bg-slate-950/80 px-3 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                        value={platformFilter}
-                        onChange={(e) => setPlatformFilter(e.target.value)}
-                    >
-                        <option value="All">Platform: All</option>
-                        {platforms.map((p) => (
-                            <option key={p} value={p}>
-                                {p}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        className="h-9 rounded-lg border border-slate-700 bg-slate-950/80 px-3 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                    >
-                        <option value="All">Category: All</option>
-                        {categories.map((c) => (
-                            <option key={c} value={c}>
-                                {c}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        className="h-9 rounded-lg border border-slate-700 bg-slate-950/80 px-3 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                        value={priorityFilter}
-                        onChange={(e) => setPriorityFilter(e.target.value)}
-                    >
-                        <option value="All">Priority: All</option>
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Urgent">Urgent</option>
-                    </select>
-
-                    <select
-                        className="h-9 rounded-lg border border-slate-700 bg-slate-950/80 px-3 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="All">Status: All</option>
-                        <option value="To Do">To Do</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="For Testing">For Testing</option>
-                        <option value="For Release">For Release</option>
-                        <option value="Done">Done</option>
-                        <option value="Returned">Returned</option>
-                    </select>
-                </div>
+                <FilterBar
+                    searchValue={search}
+                    onSearchChange={setSearch}
+                    searchPlaceholder="Search ticket ID or title..."
+                    selects={[
+                        {
+                            id: "platform",
+                            value: platformFilter,
+                            onChange: setPlatformFilter,
+                            options: [
+                                { value: "All", label: "Platform: All" },
+                                ...platforms.map((p) => ({ value: p, label: p })),
+                            ],
+                        },
+                        {
+                            id: "category",
+                            value: categoryFilter,
+                            onChange: setCategoryFilter,
+                            options: [
+                                { value: "All", label: "Category: All" },
+                                ...categories.map((c) => ({ value: c, label: c })),
+                            ],
+                        },
+                        {
+                            id: "priority",
+                            value: priorityFilter,
+                            onChange: setPriorityFilter,
+                            options: [
+                                { value: "All", label: "Priority: All" },
+                                { value: "Low", label: "Low" },
+                                { value: "Medium", label: "Medium" },
+                                { value: "High", label: "High" },
+                                { value: "Urgent", label: "Urgent" },
+                            ],
+                        },
+                        {
+                            id: "status",
+                            value: statusFilter,
+                            onChange: setStatusFilter,
+                            options: [
+                                { value: "All", label: "Status: All" },
+                                { value: "To Do", label: "To Do" },
+                                { value: "In Progress", label: "In Progress" },
+                                { value: "For Testing", label: "For Testing" },
+                                { value: "For Release", label: "For Release" },
+                                { value: "Done", label: "Done" },
+                                { value: "Returned", label: "Returned" },
+                            ],
+                        },
+                    ]}
+                />
 
                 <DataTable
                     columns={columns}
