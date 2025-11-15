@@ -4,8 +4,11 @@ import RegisterPage from "../app/auth/RegisterPage.tsx";
 
 export const router = createBrowserRouter([
     {
-        path: "/auth/login",
-        element: <LoginPage />,
+        element: <AuthOnly />,
+        children: [
+            { path: "/auth/login", element: <LoginPage /> },
+            { path: "/auth/register", element: <RegisterPage /> },
+        ],
     },
     {
         path: "/auth/register",
