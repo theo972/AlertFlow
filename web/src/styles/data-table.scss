@@ -1,0 +1,127 @@
+.data-table {
+  &__card {
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid var(--border-subtle);
+    background: rgba(2, 6, 23, 0.9); // ~ bg-slate-950/80
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+
+    thead {
+      background: var(--bg-elevated-soft);
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+    }
+
+    th {
+      text-align: left;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      color: var(--text-muted);
+
+      &.data-table__cell--right {
+        text-align: right;
+      }
+    }
+
+    td {
+      font-size: 0.8rem;
+      color: var(--text-main);
+      white-space: nowrap;
+
+      &.data-table__cell--right {
+        text-align: right;
+      }
+
+      &.data-table__cell--muted {
+        color: var(--text-muted);
+      }
+
+      &.data-table__cell--truncate {
+        max-width: 280px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    tbody {
+      background: rgba(2, 6, 23, 0.75);
+
+      tr {
+        border-top: 1px solid #020819;
+        transition: background-color 0.12s ease;
+
+        &:hover {
+          background-color: #020819;
+        }
+      }
+    }
+  }
+
+  &__empty {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-elevated-soft);
+    padding: 0.6rem 1rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  &__footer-count {
+    span {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  &__page-btn {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #1f2937;
+    background: rgba(2, 6, 23, 0.9);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.6rem;
+    transition: background 0.12s ease, color 0.12s ease;
+
+    &:hover {
+      background: #020819;
+    }
+
+    &--active {
+      background: #f9fafb;
+      color: #020617;
+      font-weight: 600;
+      border-color: #f9fafb;
+    }
+  }
+}
