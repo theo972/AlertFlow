@@ -1,124 +1,96 @@
 import { useMemo, useState } from "react";
-import {DataTable} from "../../components/table/DataTable.tsx";
-import {PriorityBadge} from "./components/PriorityBadge.tsx";
-import {StatusBadge} from "./components/StatusBadge.tsx";
-import {Badge} from "../../components/ui/Badge.tsx";
-import {FilterBar} from "../../components/ui/FilterBar.tsx";
-import type {DataTableColumn} from "../../types/data-table.ts";
-import type {Priority, Status, Ticket} from "./types/ticket-types.ts";
+import { DataTable } from "../../components/table/DataTable";
+import { PriorityBadge } from "./components/PriorityBadge";
+import { StatusBadge } from "./components/StatusBadge";
+import { Badge } from "../../components/ui/Badge";
+import { RowActionsMenu } from "../../components/ui/RowActionsMenu";
+import { ActionDeleteContentModal } from "../../components/ui/ActionDeleteContentModal";
+import { FilterBar } from "../../components/ui/FilterBar";
+import { TicketFormModal } from "./components/TicketFormModal";
+import { TICKETS } from "./types/ticket-mock";
+import type { DataTableColumn } from "../../types/data-table";
+import type {
+    Priority,
+    Status,
+    Ticket,
+    TicketFormValues,
+} from "./types/ticket-types";
+
 import "../../styles/tickets.scss";
 
-const TICKETS: Ticket[] = [
-    {
-        id: "001",
-        title: "User cannot receive notifications",
-        platform: "Indy",
-        category: "Bug",
-        priority: "High",
-        team: "Frontend",
-        assignee: "Jane Doe",
-        submittedBy: "Jane Doe",
-        date: "25 Jun 2025",
-        status: "In Progress",
-    },
-    {
-        id: "002",
-        title: "Improve ticket search performance",
-        platform: "MCC",
-        category: "Suggestion",
-        priority: "Medium",
-        team: "Backend",
-        assignee: "John Doe",
-        submittedBy: "Jane Doe",
-        date: "25 Jun 2025",
-        status: "Done",
-    },
-    {
-        id: "003",
-        title: "UI glitch on mobile ticket view",
-        platform: "ILG",
-        category: "Bug",
-        priority: "Low",
-        team: "Frontend",
-        assignee: "Jane Doe",
-        submittedBy: "John Doe",
-        date: "24 Jun 2025",
-        status: "For Release",
-    },
-    {
-        id: "004",
-        title: "Add bulk export feature",
-        platform: "Zambero",
-        category: "Suggestion",
-        priority: "Low",
-        team: "Backend",
-        assignee: "Jane Doe",
-        submittedBy: "Jane Doe",
-        date: "24 Jun 2025",
-        status: "For Testing",
-    },
-    {
-        id: "005",
-        title: "Notification email duplicated",
-        platform: "Indy",
-        category: "Bug",
-        priority: "High",
-        team: "Frontend",
-        assignee: "John Doe",
-        submittedBy: "Jane Doe",
-        date: "23 Jun 2025",
-        status: "Returned",
-    },
-    {
-        id: "006",
-        title: "Add custom ticket fields",
-        platform: "MCC",
-        category: "Suggestion",
-        priority: "Medium",
-        team: "Backend",
-        assignee: "Jane Doe",
-        submittedBy: "John Doe",
-        date: "22 Jun 2025",
-        status: "To Do",
-    },
-];
-
 export default function TicketsPage() {
+    const [tickets, setTickets] = useState<Ticket[]>(TICKETS);
+    const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
+    const [showDeletePopup, setShowDeletePopup] = useState(false);
+    const [showEditPopup, setShowEditPopup] = useState(false);
     const [search, setSearch] = useState("");
     const [platformFilter, setPlatformFilter] = useState("All");
     const [categoryFilter, setCategoryFilter] = useState("All");
     const [priorityFilter, setPriorityFilter] = useState("All");
     const [statusFilter, setStatusFilter] = useState("All");
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-    const pendingCount = TICKETS.filter((t) => t.status === "To Do").length;
-    const inProgressCount = TICKETS.filter(
-        (t) => t.status === "In Progress"
-    ).length;
-    const testingCount = TICKETS.filter((t) => t.status === "For Testing").length;
-    const releaseCount = TICKETS.filter((t) => t.status === "For Release").length;
-
+    const pendingCount = tickets.filter((ticket) => ticket.status === "To Do").length;
+    const inProgressCount = tickets.filter((ticket) => ticket.status === "In Progress",).length;
+    const testingCount = tickets.filter((ticket) => ticket.status === "For Testing",).length;
+    const releaseCount = tickets.filter((ticket) => ticket.status === "For Release",).length;
     const filteredTickets = useMemo(() => {
-        return TICKETS.filter((t) => {
-            if (
-                search &&
-                !t.title.toLowerCase().includes(search.toLowerCase()) &&
-                !t.id.toLowerCase().includes(search.toLowerCase())
-            ) {
+        return tickets.filter((ticket) => {
+            if (search && !ticket.title.toLowerCase().includes(search.toLowerCase()) && !ticket.id.toLowerCase().includes(search.toLowerCase())) {
                 return false;
             }
-            if (platformFilter !== "All" && t.platform !== platformFilter) return false;
-            if (categoryFilter !== "All" && t.category !== categoryFilter) return false;
-            if (priorityFilter !== "All" && t.priority !== (priorityFilter as Priority))
-                return false;
-            if (statusFilter !== "All" && t.status !== (statusFilter as Status))
-                return false;
-
-            return true;
+            if (platformFilter !== "All" && ticket.platform !== platformFilter) return false;
+            if (categoryFilter !== "All" && ticket.category !== categoryFilter) return false;
+            if (priorityFilter !== "All" && ticket.priority !== (priorityFilter as Priority)) return false;
+            return !(statusFilter !== "All" && ticket.status !== (statusFilter as Status));
         });
-    }, [search, platformFilter, categoryFilter, priorityFilter, statusFilter]);
+    }, [
+        tickets,
+        search,
+        platformFilter,
+        categoryFilter,
+        priorityFilter,
+        statusFilter,
+    ]);
+    const platforms = Array.from(new Set(tickets.map((ticket) => ticket.platform)));
+    const categories = Array.from(new Set(tickets.map((ticket) => ticket.category)));
 
-    const platforms = Array.from(new Set(TICKETS.map((t) => t.platform)));
-    const categories = Array.from(new Set(TICKETS.map((t) => t.category)));
+    const toFormValues = (ticket: Ticket): TicketFormValues => ({
+        title: ticket.title,
+        platform: ticket.platform,
+        category: ticket.category,
+        priority: ticket.priority,
+        team: ticket.team,
+        assignee: ticket.assignee,
+        submittedBy: ticket.submittedBy,
+        status: ticket.status,
+        description: ticket.description ?? "",
+    });
+
+    const handleCreateSubmit = (values: TicketFormValues) => {
+        const nextId = String(Math.max(0, ...tickets.map((ticket) => Number(ticket.id) || 0)) + 1,).padStart(3, "0");
+        const newTicket: Ticket = {
+            id: nextId,
+            date: new Date().toLocaleDateString("en-GB", {day: "2-digit", month: "short", year: "numeric",}),
+            ...values,
+        };
+
+        setTickets((prev) => [newTicket, ...prev]);
+        setIsCreateOpen(false);
+    };
+
+    const handleEditSubmit = (id: string, values: TicketFormValues) => {
+        setTickets((prev) => prev.map((ticket) => (ticket.id === id ? { ...ticket, ...values } : ticket)));
+        setShowEditPopup(false);
+        setCurrentTicket(null);
+    };
+
+    const confirmDeleteTicket = () => {
+        if (!currentTicket) return;
+        setTickets((prev) => prev.filter((ticket) => ticket.id !== currentTicket.id));
+        setShowDeletePopup(false);
+        setCurrentTicket(null);
+    };
 
     const columns: DataTableColumn<Ticket>[] = [
         {
@@ -132,7 +104,9 @@ export default function TicketsPage() {
             header: "Title",
             truncate: true,
             render: (ticket) => (
-                <span className="text-sm font-medium text-slate-100">{ticket.title}</span>
+                <span className="text-sm font-medium text-slate-100">
+          {ticket.title}
+        </span>
             ),
         },
         { key: "platform", header: "Platform" },
@@ -160,11 +134,20 @@ export default function TicketsPage() {
             render: (ticket) => <StatusBadge status={ticket.status} />,
         },
         {
-            key: "actions",
-            header: "…",
+            key: "menu",
+            header: "",
             align: "right",
-            render: () => (
-                <span className="text-xl text-slate-500 select-none">⋯</span>
+            render: (ticket) => (
+                <RowActionsMenu
+                    onEdit={() => {
+                        setCurrentTicket(ticket);
+                        setShowEditPopup(true);
+                    }}
+                    onDelete={() => {
+                        setCurrentTicket(ticket);
+                        setShowDeletePopup(true);
+                    }}
+                />
             ),
         },
     ];
@@ -172,44 +155,51 @@ export default function TicketsPage() {
     return (
         <div className="h-full w-full text-slate-100">
             {/* HEADER */}
-            <div className="flex items-center justify-between gap-4 mb-6 block-card">
+            <div className="mb-6 flex items-center justify-between gap-4 block-card">
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">Ticketing</h1>
-                    <p className="mt-1 text-sm text-slate-400 py-2">
+                    <p className="mt-1 py-2 text-sm text-slate-400">
                         You have{" "}
-                        <span className="font-semibold text-slate-100">{pendingCount} tickets
-                        </span>{" "}
+                        <span className="font-semibold text-slate-100">
+              {pendingCount} tickets
+            </span>{" "}
                         in{" "}
                         <Badge className="bg-slate-700/80 text-slate-100">To Do</Badge> and{" "}
-                        <span className="font-semibold text-slate-100">{inProgressCount}</span>{" "}
+                        <span className="font-semibold text-slate-100">
+              {inProgressCount}
+            </span>{" "}
                         in{" "}
-                        <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/30">In Progress</Badge>
+                        <Badge className="border border-amber-500/30 bg-amber-500/10 text-amber-300">
+                            In Progress
+                        </Badge>
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
                         Also {testingCount}{" "}
-                        <Badge className="bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/30">
+                        <Badge className="border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">
                             For Testing
                         </Badge>{" "}
                         and {releaseCount}{" "}
-                        <Badge className="bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                        <Badge className="border border-sky-500/30 bg-sky-500/10 text-sky-300">
                             For Release
                         </Badge>
+                        .
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium hover:bg-slate-800 transition">
+                    <button className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium transition hover:bg-slate-800">
                         Get Report
                     </button>
-                    <button className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-400 transition">
+                    <button
+                        className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400"
+                        onClick={() => setIsCreateOpen(true)}
+                    >
                         Create Ticket
                     </button>
                 </div>
             </div>
 
-            {/* CARD FILTRES + TABLE */}
             <div className="block-card">
-                {/* Filtres + search */}
                 <FilterBar
                     searchValue={search}
                     onSearchChange={setSearch}
@@ -271,10 +261,41 @@ export default function TicketsPage() {
                         currentPage: 1,
                         totalPages: 3,
                         pageSize: filteredTickets.length,
-                        totalItems: TICKETS.length,
+                        totalItems: tickets.length,
                     }}
                 />
             </div>
+
+            <TicketFormModal
+                open={isCreateOpen}
+                mode="create"
+                onCancel={() => setIsCreateOpen(false)}
+                onSubmit={handleCreateSubmit}
+            />
+
+            {showEditPopup && currentTicket && (
+                <TicketFormModal
+                    open={true}
+                    mode="edit"
+                    initialValues={toFormValues(currentTicket)}
+                    onCancel={() => {
+                        setShowEditPopup(false);
+                        setCurrentTicket(null);
+                    }}
+                    onSubmit={(values) => handleEditSubmit(currentTicket.id, values)}
+                />
+            )}
+
+            <ActionDeleteContentModal
+                open={showDeletePopup && !!currentTicket}
+                title="Supprimer ce ticket ?"
+                label={currentTicket ? `Voulez-vous vraiment supprimer le ticket #${currentTicket.id} – "${currentTicket.title}" ?` : ""}
+                onCancel={() => {
+                    setShowDeletePopup(false);
+                    setCurrentTicket(null);
+                }}
+                onConfirm={confirmDeleteTicket}
+            />
         </div>
     );
 }

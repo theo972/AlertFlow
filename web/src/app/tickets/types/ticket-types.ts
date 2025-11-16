@@ -19,4 +19,17 @@ export type Ticket = {
     submittedBy: string;
     date: string;
     status: Status;
+    description?: string;
+};
+
+export type TicketFormValues = {
+    title: string;
+    platform: string;
+    category: string;
+    priority: Priority;
+    team: string;
+    assignee: string;
+    submittedBy: string;
+    status: Status;
+    description?: string;
 };
