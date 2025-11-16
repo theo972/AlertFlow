@@ -29,38 +29,38 @@ export default function UsersPage() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     const totalUsers = users.length;
-    const activeCount = users.filter((u) => u.status === "Active").length;
-    const invitedCount = users.filter((u) => u.status === "Invited").length;
-    const suspendedCount = users.filter((u) => u.status === "Suspended").length;
+    const activeCount = users.filter((user) => user.status === "Active").length;
+    const invitedCount = users.filter((user) => user.status === "Invited").length;
+    const suspendedCount = users.filter((user) => user.status === "Suspended").length;
 
     const filteredUsers = useMemo(() => {
-        return users.filter((u) => {
+        return users.filter((user) => {
             if (
                 search &&
-                !u.name.toLowerCase().includes(search.toLowerCase()) &&
-                !u.email.toLowerCase().includes(search.toLowerCase())
+                !user.name.toLowerCase().includes(search.toLowerCase()) &&
+                !user.email.toLowerCase().includes(search.toLowerCase())
             ) {
                 return false;
             }
-            if (roleFilter !== "All" && u.role !== roleFilter) return false;
-            if (statusFilter !== "All" && u.status !== statusFilter) return false;
+            if (roleFilter !== "All" && user.role !== roleFilter) return false;
+            if (statusFilter !== "All" && user.status !== statusFilter) return false;
             return true;
         });
     }, [users, search, roleFilter, statusFilter]);
 
-    const toFormValues = (u: User): UserFormValues => ({
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        permissions: u.permissions,
-        lastActive: u.lastActive,
-        dateAdded: u.dateAdded,
-        status: u.status,
+    const toFormValues = (user: User): UserFormValues => ({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions,
+        lastActive: user.lastActive,
+        dateAdded: user.dateAdded,
+        status: user.status,
     });
 
     const handleCreateSubmit = (values: UserFormValues) => {
         const nextId = String(
-            Math.max(0, ...users.map((u) => Number(u.id) || 0)) + 1,
+            Math.max(0, ...users.map((user) => Number(user.id) || 0)) + 1,
         );
 
         const newUser: User = {
@@ -73,14 +73,14 @@ export default function UsersPage() {
     };
 
     const handleEditSubmit = (id: string, values: UserFormValues) => {
-        setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...values } : u)));
+        setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, ...values } : user)));
         setShowEditPopup(false);
         setCurrentUser(null);
     };
 
     const confirmDeleteUser = () => {
         if (!currentUser) return;
-        setUsers((prev) => prev.filter((u) => u.id !== currentUser.id));
+        setUsers((prev) => prev.filter((user) => user.id !== currentUser.id));
         setShowDeletePopup(false);
         setCurrentUser(null);
     };
@@ -118,12 +118,12 @@ export default function UsersPage() {
             render: (user) => (
                 <div className="flex flex-wrap items-center gap-1.5">
                     <UserRoleBadge role={user.role} />
-                    {user.permissions.map((p) => (
+                    {user.permissions.map((permission) => (
                         <Badge
-                            key={p}
+                            key={permission}
                             className="border border-slate-600/70 bg-slate-800/80 text-slate-200"
                         >
-                            {p}
+                            {permission}
                         </Badge>
                     ))}
                 </div>

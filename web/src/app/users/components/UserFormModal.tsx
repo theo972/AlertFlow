@@ -138,9 +138,9 @@ export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: 
                                 handleChange("role")(e.target.value as UserRole)
                             }
                         >
-                            {ROLES.map((r) => (
-                                <option key={r} value={r}>
-                                    {r}
+                            {ROLES.map((role) => (
+                                <option key={role} value={role}>
+                                    {role}
                                 </option>
                             ))}
                         </select>
@@ -157,9 +157,9 @@ export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: 
                                 handleChange("status")(e.target.value as UserStatus)
                             }
                         >
-                            {STATUSES.map((s) => (
-                                <option key={s} value={s}>
-                                    {s}
+                            {STATUSES.map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
                                 </option>
                             ))}
                         </select>
@@ -192,7 +192,7 @@ export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: 
                             handleChange("permissions")(
                                 e.target.value
                                     .split(",")
-                                    .map((p) => p.trim())
+                                    .map((permission) => permission.trim())
                                     .filter(Boolean),
                             )
                         }

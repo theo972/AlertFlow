@@ -61,15 +61,8 @@ export function TicketFormModal({open, mode, initialValues, onCancel, onSubmit,}
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         const title = form.title.trim();
         const platform = form.platform.trim();
-
-        if (!title || !platform) {
-            // tu peux gérer un message d’erreur plus tard
-            return;
-        }
-
         const cleaned: TicketFormValues = {
             ...form,
             title,

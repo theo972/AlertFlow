@@ -9,13 +9,7 @@ import { FilterBar } from "../../components/ui/FilterBar";
 import { TicketFormModal } from "./components/TicketFormModal";
 import { TICKETS } from "./types/ticket-mock";
 import type { DataTableColumn } from "../../types/data-table";
-import type {
-    Priority,
-    Status,
-    Ticket,
-    TicketFormValues,
-} from "./types/ticket-types";
-
+import type {Priority, Status, Ticket, TicketFormValues} from "./types/ticket-types";
 import "../../styles/tickets.scss";
 
 export default function TicketsPage() {
@@ -154,7 +148,6 @@ export default function TicketsPage() {
 
     return (
         <div className="h-full w-full text-slate-100">
-            {/* HEADER */}
             <div className="mb-6 flex items-center justify-between gap-4 block-card">
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">Ticketing</h1>
@@ -162,12 +155,9 @@ export default function TicketsPage() {
                         You have{" "}
                         <span className="font-semibold text-slate-100">
               {pendingCount} tickets
-            </span>{" "}
-                        in{" "}
+            </span>{" "} in{" "}
                         <Badge className="bg-slate-700/80 text-slate-100">To Do</Badge> and{" "}
-                        <span className="font-semibold text-slate-100">
-              {inProgressCount}
-            </span>{" "}
+                        <span className="font-semibold text-slate-100">{inProgressCount}</span>{" "}
                         in{" "}
                         <Badge className="border border-amber-500/30 bg-amber-500/10 text-amber-300">
                             In Progress
