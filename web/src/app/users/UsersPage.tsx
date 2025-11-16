@@ -1,116 +1,112 @@
-import {JSX, useMemo, useState} from "react";
-import "../../styles/users.scss";
+import { useMemo, useState } from "react";
 import { DataTable } from "../../components/table/DataTable";
 import { Badge } from "../../components/ui/Badge";
-import {FilterBar} from "../../components/ui/FilterBar.tsx";
-import type {User, UserRole, UserStatus} from "./types/user-types.ts";
-import {UserRoleBadge} from "./components/UserRoleBadge.tsx";
-import {UserStatusDot} from "./components/UserStatusDot.tsx";
-import type {DataTableColumn} from "../../types/data-table.ts";
-
-
-const USERS: User[] = [
-    {
-        id: "1",
-        name: "Florence Shaw",
-        email: "florence@untitledui.com",
-        role: "Owner",
-        permissions: ["Admin", "Data Export", "Data Import"],
-        lastActive: "Mar 4, 2024",
-        dateAdded: "Jul 4, 2022",
-        status: "Active",
-    },
-    {
-        id: "2",
-        name: "Amélie Laurent",
-        email: "amelie@untitledui.com",
-        role: "Admin",
-        permissions: ["Data Export", "Data Import"],
-        lastActive: "Mar 4, 2024",
-        dateAdded: "Jul 4, 2022",
-        status: "Active",
-    },
-    {
-        id: "3",
-        name: "Ammar Foley",
-        email: "ammar@untitledui.com",
-        role: "Member",
-        permissions: ["Data Export", "Data Import"],
-        lastActive: "Mar 2, 2024",
-        dateAdded: "Jul 4, 2022",
-        status: "Invited",
-    },
-    {
-        id: "4",
-        name: "Caitlyn King",
-        email: "caitlyn@untitledui.com",
-        role: "Member",
-        permissions: ["Data Export"],
-        lastActive: "Mar 6, 2024",
-        dateAdded: "Jul 4, 2022",
-        status: "Active",
-    },
-    {
-        id: "5",
-        name: "Sienna Hewitt",
-        email: "sienna@untitledui.com",
-        role: "Admin",
-        permissions: ["Data Export", "Data Import"],
-        lastActive: "Mar 8, 2024",
-        dateAdded: "Jul 4, 2022",
-        status: "Suspended",
-    },
-];
+import { RowActionsMenu } from "../../components/ui/RowActionsMenu";
+import { ActionDeleteContentModal } from "../../components/ui/ActionDeleteContentModal";
+import { FilterBar } from "../../components/ui/FilterBar";
+import { UserRoleBadge } from "./components/UserRoleBadge";
+import { UserStatusDot } from "./components/UserStatusDot";
+import { UserFormModal } from "./components/UserFormModal";
+import { USERS } from "./types/user-mock";
+import type { DataTableColumn } from "../../types/data-table";
+import type {
+    User,
+    UserFormValues,
+    UserRole,
+    UserStatus,
+} from "./types/user-types";
+import "../../styles/users.scss";
 
 export default function UsersPage() {
+    const [users, setUsers] = useState<User[]>(USERS);
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState<"All" | UserRole>("All");
     const [statusFilter, setStatusFilter] = useState<"All" | UserStatus>("All");
 
-    const filteredUsers = useMemo(
-        () =>
-            USERS.filter((u) => {
-                if (
-                    search &&
-                    !u.name.toLowerCase().includes(search.toLowerCase()) &&
-                    !u.email.toLowerCase().includes(search.toLowerCase())
-                ) {
-                    return false;
-                }
-                if (roleFilter !== "All" && u.role !== roleFilter) return false;
-                return !(statusFilter !== "All" && u.status !== statusFilter);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [showDeletePopup, setShowDeletePopup] = useState(false);
+    const [showEditPopup, setShowEditPopup] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-            }),
-        [search, roleFilter, statusFilter]
-    );
+    const totalUsers = users.length;
+    const activeCount = users.filter((u) => u.status === "Active").length;
+    const invitedCount = users.filter((u) => u.status === "Invited").length;
+    const suspendedCount = users.filter((u) => u.status === "Suspended").length;
+
+    const filteredUsers = useMemo(() => {
+        return users.filter((u) => {
+            if (
+                search &&
+                !u.name.toLowerCase().includes(search.toLowerCase()) &&
+                !u.email.toLowerCase().includes(search.toLowerCase())
+            ) {
+                return false;
+            }
+            if (roleFilter !== "All" && u.role !== roleFilter) return false;
+            if (statusFilter !== "All" && u.status !== statusFilter) return false;
+            return true;
+        });
+    }, [users, search, roleFilter, statusFilter]);
+
+    const toFormValues = (u: User): UserFormValues => ({
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        permissions: u.permissions,
+        lastActive: u.lastActive,
+        dateAdded: u.dateAdded,
+        status: u.status,
+    });
+
+    const handleCreateSubmit = (values: UserFormValues) => {
+        const nextId = String(
+            Math.max(0, ...users.map((u) => Number(u.id) || 0)) + 1,
+        );
+
+        const newUser: User = {
+            id: nextId,
+            ...values,
+        };
+
+        setUsers((prev) => [newUser, ...prev]);
+        setIsCreateOpen(false);
+    };
+
+    const handleEditSubmit = (id: string, values: UserFormValues) => {
+        setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...values } : u)));
+        setShowEditPopup(false);
+        setCurrentUser(null);
+    };
+
+    const confirmDeleteUser = () => {
+        if (!currentUser) return;
+        setUsers((prev) => prev.filter((u) => u.id !== currentUser.id));
+        setShowDeletePopup(false);
+        setCurrentUser(null);
+    };
 
     const columns: DataTableColumn<User>[] = [
         {
-            key: "select",
-            header: "",
+            key: "id",
+            header: "#",
             align: "left",
-            render: () => (
-                <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-900"
-                />
-            ),
+            className: "data-table__cell--muted",
         },
         {
             key: "name",
             header: "User name",
             truncate: true,
-            render: (user: User) => (
+            render: (user) => (
                 <div className="flex items-center gap-3">
                     <div className="users-avatar">
-          <span className="users-avatar-initial">
-            {user.name.charAt(0)}
-          </span>
+            <span className="users-avatar-initial">
+              {user.name.charAt(0)}
+            </span>
                     </div>
                     <div className="flex flex-col">
-          <span className="text-sm font-medium text-slate-100">
-            {user.name}
-          </span>
+            <span className="text-sm font-medium text-slate-100">
+              {user.name}
+            </span>
                         <span className="text-xs text-slate-400">{user.email}</span>
                     </div>
                 </div>
@@ -119,13 +115,13 @@ export default function UsersPage() {
         {
             key: "access",
             header: "Access",
-            render: (user: User) => (
+            render: (user) => (
                 <div className="flex flex-wrap items-center gap-1.5">
                     <UserRoleBadge role={user.role} />
                     {user.permissions.map((p) => (
                         <Badge
                             key={p}
-                            className="bg-slate-800/80 text-slate-200 border border-slate-600/70"
+                            className="border border-slate-600/70 bg-slate-800/80 text-slate-200"
                         >
                             {p}
                         </Badge>
@@ -137,7 +133,7 @@ export default function UsersPage() {
             key: "lastActive",
             header: "Last active",
             className: "data-table__cell--muted",
-            render: (user: User) => (
+            render: (user) => (
                 <div className="flex items-center gap-2">
                     <UserStatusDot status={user.status} />
                     <span>{user.lastActive}</span>
@@ -153,51 +149,72 @@ export default function UsersPage() {
             key: "menu",
             header: "",
             align: "right",
-            render: () => (
-                <span className="text-xl text-slate-500 cursor-pointer select-none">⋯</span>
+            render: (user) => (
+                <RowActionsMenu
+                    onEdit={() => {
+                        setCurrentUser(user);
+                        setShowEditPopup(true);
+                    }}
+                    onDelete={() => {
+                        setCurrentUser(user);
+                        setShowDeletePopup(true);
+                    }}
+                />
             ),
         },
     ];
 
     return (
         <div className="h-full w-full text-slate-100">
-            <div className="users-header block-card mb-6">
+            {/* HEADER */}
+            <div className="mb-6 flex items-center justify-between gap-4 block-card">
                 <div>
-                    <h1 className="users-title">User management</h1>
-                    <p className="users-subtitle">
-                        Manage your team members and their access permissions here.
-                    </p>
-                    <div className="users-count">
+                    <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+                    <p className="mt-1 py-2 text-sm text-slate-400">
                         All users{" "}
-                        <span className="users-count-number">{USERS.length}</span>
-                    </div>
+                        <span className="font-semibold text-slate-100">
+              {totalUsers}
+            </span>
+                        . Active{" "}
+                        <Badge className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-300">
+                            {activeCount} active
+                        </Badge>{" "}
+                        ·{" "}
+                        <Badge className="border border-amber-500/40 bg-amber-500/10 text-amber-300">
+                            {invitedCount} invited
+                        </Badge>{" "}
+                        ·{" "}
+                        <Badge className="border border-rose-500/40 bg-rose-500/10 text-rose-300">
+                            {suspendedCount} suspended
+                        </Badge>
+                    </p>
                 </div>
 
-                <div className="users-header-actions">
-                    <button className="users-btn users-btn--ghost">Filters</button>
-                    <button className="users-btn users-btn--primary">+ Add user</button>
+                <div className="flex items-center gap-3">
+                    <button className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium transition hover:bg-slate-800">
+                        Export
+                    </button>
+                    <button
+                        className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400"
+                        onClick={() => setIsCreateOpen(true)}
+                    >
+                        Invite user
+                    </button>
                 </div>
             </div>
 
             <div className="block-card">
                 <FilterBar
-                    className="users-toolbar"
-                    leftNode={
-                        <div className="users-count">
-                            All users{" "}
-                            <span className="users-count-number">{USERS.length}</span>
-                        </div>
-                    }
                     searchValue={search}
                     onSearchChange={setSearch}
-                    searchPlaceholder="Search user name or email..."
+                    searchPlaceholder="Search name or email..."
                     selects={[
                         {
                             id: "role",
                             value: roleFilter,
                             onChange: (v) => setRoleFilter(v as any),
                             options: [
-                                { value: "All", label: "Role: All" },
+                                { value: "All", label: "All roles" },
                                 { value: "Owner", label: "Owner" },
                                 { value: "Admin", label: "Admin" },
                                 { value: "Member", label: "Member" },
@@ -208,7 +225,7 @@ export default function UsersPage() {
                             value: statusFilter,
                             onChange: (v) => setStatusFilter(v as any),
                             options: [
-                                { value: "All", label: "Status: All" },
+                                { value: "All", label: "All status" },
                                 { value: "Active", label: "Active" },
                                 { value: "Invited", label: "Invited" },
                                 { value: "Suspended", label: "Suspended" },
@@ -217,19 +234,57 @@ export default function UsersPage() {
                     ]}
                 />
 
-                <DataTable<User>
+                <DataTable
                     columns={columns}
                     data={filteredUsers}
-                    getRowId={(u) => u.id}
+                    getRowId={(row) => row.id}
                     emptyMessage="No users found with current filters."
                     pagination={{
                         currentPage: 1,
                         totalPages: 3,
                         pageSize: filteredUsers.length,
-                        totalItems: USERS.length,
+                        totalItems: users.length,
                     }}
                 />
             </div>
+
+            {/* Modal création */}
+            <UserFormModal
+                open={isCreateOpen}
+                mode="create"
+                onCancel={() => setIsCreateOpen(false)}
+                onSubmit={handleCreateSubmit}
+            />
+
+            {/* Modal édition */}
+            {showEditPopup && currentUser && (
+                <UserFormModal
+                    open={true}
+                    mode="edit"
+                    initialValues={toFormValues(currentUser)}
+                    onCancel={() => {
+                        setShowEditPopup(false);
+                        setCurrentUser(null);
+                    }}
+                    onSubmit={(values) => handleEditSubmit(currentUser.id, values)}
+                />
+            )}
+
+            {/* Confirm delete */}
+            <ActionDeleteContentModal
+                open={showDeletePopup && !!currentUser}
+                title="Supprimer cet utilisateur ?"
+                label={
+                    currentUser
+                        ? `Voulez-vous vraiment supprimer "${currentUser.name}" (${currentUser.email}) ?`
+                        : ""
+                }
+                onCancel={() => {
+                    setShowDeletePopup(false);
+                    setCurrentUser(null);
+                }}
+                onConfirm={confirmDeleteUser}
+            />
         </div>
     );
 }
