@@ -4,7 +4,6 @@ namespace App\Service\Search\Provider;
 
 use App\Dto\SearchQuery;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadata;
 
 abstract class AbstractSearchProvider implements SearchProviderInterface
 {

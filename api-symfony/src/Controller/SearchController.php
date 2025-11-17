@@ -28,7 +28,7 @@ class SearchController extends AbstractApiController
         return $this->json(
             $result,
             Response::HTTP_OK,
-            ['groups' => ['search:read', 'ticket:read']]
+            ['groups' => ['search:read', 'ticket:read', 'user:read']]
         );
     }
 
