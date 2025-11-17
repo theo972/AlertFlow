@@ -85,13 +85,14 @@
         }
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest",
+        "doctrine/doctrine-fixtures-bundle": "^4.3",
         "friendsofphp/php-cs-fixer": "^3.88.2",
         "phpstan/phpstan": "^2.1.30",
         "phpstan/phpstan-doctrine": "^2.0.10",
         "phpstan/phpstan-phpunit": "^2.0.7",
         "phpstan/phpstan-symfony": "^2.0.8",
         "phpunit/phpunit": "^11.5.42",
+        "roave/security-advisories": "dev-latest",
         "symfony/maker-bundle": "^1.64"
     }
 }
