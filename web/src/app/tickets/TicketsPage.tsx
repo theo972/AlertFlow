@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataTable } from "../../components/table/DataTable";
 import { PriorityBadge } from "./components/PriorityBadge";
 import { StatusBadge } from "./components/StatusBadge";
@@ -7,13 +7,13 @@ import { RowActionsMenu } from "../../components/ui/RowActionsMenu";
 import { ActionDeleteContentModal } from "../../components/ui/ActionDeleteContentModal";
 import { FilterBar } from "../../components/ui/FilterBar";
 import { TicketFormModal } from "./components/TicketFormModal";
-import { TICKETS } from "./types/ticket-mock";
 import type { DataTableColumn } from "../../types/data-table";
-import type {Priority, Status, Ticket, TicketFormValues} from "./types/ticket-types";
+import type { Priority, Status, Ticket, TicketFormValues } from "./types/ticket-types";
+import { searchTickets, createTicket, updateTicket, deleteTicket } from "./api/ticket-api";
 import "../../styles/tickets.scss";
 
 export default function TicketsPage() {
-    const [tickets, setTickets] = useState<Ticket[]>(TICKETS);
+    const [tickets, setTickets] = useState<Ticket[]>([]);
     const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [showEditPopup, setShowEditPopup] = useState(false);
@@ -24,13 +24,42 @@ export default function TicketsPage() {
     const [statusFilter, setStatusFilter] = useState("All");
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-    const pendingCount = tickets.filter((ticket) => ticket.status === "To Do").length;
-    const inProgressCount = tickets.filter((ticket) => ticket.status === "In Progress",).length;
-    const testingCount = tickets.filter((ticket) => ticket.status === "For Testing",).length;
-    const releaseCount = tickets.filter((ticket) => ticket.status === "For Release",).length;
+    const [page, setPage] = useState(1);
+    const [perPage] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setLoading(true);
+                const res = await searchTickets({
+                    page,
+                    perPage,
+                    order: "desc",
+                    filters: {},
+                });
+                setTickets(res.data);
+                setTotalPages(res.totalPages);
+                setTotalItems(res.total);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, [page, perPage]);
+
+    const pendingCount = tickets.filter((ticket) => ticket.status === "open").length;
+    const inProgressCount = tickets.filter((ticket) => ticket.status === "in_progress").length;
+    const resolvedCount = tickets.filter((ticket) => ticket.status === "resolved").length;
+    const closedCount = tickets.filter((ticket) => ticket.status === "closed").length;
+
     const filteredTickets = useMemo(() => {
         return tickets.filter((ticket) => {
-            if (search && !ticket.title.toLowerCase().includes(search.toLowerCase()) && !ticket.id.toLowerCase().includes(search.toLowerCase())) {
+            if (search && !ticket.title.toLowerCase().includes(search.toLowerCase()) && !String(ticket.id).toLowerCase().includes(search.toLowerCase())) {
                 return false;
             }
             if (platformFilter !== "All" && ticket.platform !== platformFilter) return false;
@@ -38,14 +67,8 @@ export default function TicketsPage() {
             if (priorityFilter !== "All" && ticket.priority !== (priorityFilter as Priority)) return false;
             return !(statusFilter !== "All" && ticket.status !== (statusFilter as Status));
         });
-    }, [
-        tickets,
-        search,
-        platformFilter,
-        categoryFilter,
-        priorityFilter,
-        statusFilter,
-    ]);
+    }, [tickets, search, platformFilter, categoryFilter, priorityFilter, statusFilter]);
+
     const platforms = Array.from(new Set(tickets.map((ticket) => ticket.platform)));
     const categories = Array.from(new Set(tickets.map((ticket) => ticket.category)));
 
@@ -55,32 +78,28 @@ export default function TicketsPage() {
         category: ticket.category,
         priority: ticket.priority,
         team: ticket.team,
-        assignee: ticket.assignee,
+        assignee: ticket.assignee ?? "",
         submittedBy: ticket.submittedBy,
         status: ticket.status,
         description: ticket.description ?? "",
     });
 
-    const handleCreateSubmit = (values: TicketFormValues) => {
-        const nextId = String(Math.max(0, ...tickets.map((ticket) => Number(ticket.id) || 0)) + 1,).padStart(3, "0");
-        const newTicket: Ticket = {
-            id: nextId,
-            date: new Date().toLocaleDateString("en-GB", {day: "2-digit", month: "short", year: "numeric",}),
-            ...values,
-        };
-
-        setTickets((prev) => [newTicket, ...prev]);
+    const handleCreateSubmit = async (values: TicketFormValues) => {
+        const created = await createTicket(values);
+        setTickets((prev) => [created, ...prev]);
         setIsCreateOpen(false);
     };
 
-    const handleEditSubmit = (id: string, values: TicketFormValues) => {
-        setTickets((prev) => prev.map((ticket) => (ticket.id === id ? { ...ticket, ...values } : ticket)));
+    const handleEditSubmit = async (id: number, values: TicketFormValues) => {
+        const updated = await updateTicket(id, values);
+        setTickets((prev) => prev.map((t) => (t.id === id ? updated : t)));
         setShowEditPopup(false);
         setCurrentTicket(null);
     };
 
-    const confirmDeleteTicket = () => {
+    const confirmDeleteTicket = async () => {
         if (!currentTicket) return;
+        await deleteTicket(currentTicket.id);
         setTickets((prev) => prev.filter((ticket) => ticket.id !== currentTicket.id));
         setShowDeletePopup(false);
         setCurrentTicket(null);
@@ -99,8 +118,8 @@ export default function TicketsPage() {
             truncate: true,
             render: (ticket) => (
                 <span className="text-sm font-medium text-slate-100">
-          {ticket.title}
-        </span>
+                    {ticket.title}
+                </span>
             ),
         },
         { key: "platform", header: "Platform" },
@@ -118,9 +137,22 @@ export default function TicketsPage() {
             className: "data-table__cell--muted",
         },
         {
-            key: "date",
+            key: "createdAt",
             header: "Date",
             className: "data-table__cell--muted",
+            render: (ticket) => {
+                const d = new Date(ticket.createdAt);
+                if (isNaN(d.getTime())) return <span>-</span>;
+                return (
+                    <span>
+                        {d.toLocaleDateString("fr-FR", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                        })}
+                    </span>
+                );
+            },
         },
         {
             key: "status",
@@ -154,23 +186,24 @@ export default function TicketsPage() {
                     <p className="mt-1 py-2 text-sm text-slate-400">
                         You have{" "}
                         <span className="font-semibold text-slate-100">
-              {pendingCount} tickets
-            </span>{" "} in{" "}
-                        <Badge className="bg-slate-700/80 text-slate-100">To Do</Badge> and{" "}
+                            {pendingCount} tickets
+                        </span>{" "}
+                        in{" "}
+                        <Badge className="bg-slate-700/80 text-slate-100">Open</Badge> and{" "}
                         <span className="font-semibold text-slate-100">{inProgressCount}</span>{" "}
                         in{" "}
                         <Badge className="border border-amber-500/30 bg-amber-500/10 text-amber-300">
-                            In Progress
+                            In&nbsp;progress
                         </Badge>
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                        Also {testingCount}{" "}
-                        <Badge className="border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">
-                            For Testing
+                        Also {resolvedCount}{" "}
+                        <Badge className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+                            Resolved
                         </Badge>{" "}
-                        and {releaseCount}{" "}
-                        <Badge className="border border-sky-500/30 bg-sky-500/10 text-sky-300">
-                            For Release
+                        and {closedCount}{" "}
+                        <Badge className="border border-slate-500/30 bg-slate-500/10 text-slate-300">
+                            Closed
                         </Badge>
                         .
                     </p>
@@ -219,10 +252,9 @@ export default function TicketsPage() {
                             onChange: setPriorityFilter,
                             options: [
                                 { value: "All", label: "Priority: All" },
-                                { value: "Low", label: "Low" },
-                                { value: "Medium", label: "Medium" },
-                                { value: "High", label: "High" },
-                                { value: "Urgent", label: "Urgent" },
+                                { value: "low", label: "low" },
+                                { value: "medium", label: "medium" },
+                                { value: "high", label: "high" },
                             ],
                         },
                         {
@@ -231,12 +263,10 @@ export default function TicketsPage() {
                             onChange: setStatusFilter,
                             options: [
                                 { value: "All", label: "Status: All" },
-                                { value: "To Do", label: "To Do" },
-                                { value: "In Progress", label: "In Progress" },
-                                { value: "For Testing", label: "For Testing" },
-                                { value: "For Release", label: "For Release" },
-                                { value: "Done", label: "Done" },
-                                { value: "Returned", label: "Returned" },
+                                { value: "open", label: "open" },
+                                { value: "in_progress", label: "in_progress" },
+                                { value: "resolved", label: "resolved" },
+                                { value: "closed", label: "closed" },
                             ],
                         },
                     ]}
@@ -245,13 +275,14 @@ export default function TicketsPage() {
                 <DataTable
                     columns={columns}
                     data={filteredTickets}
-                    getRowId={(row) => row.id}
-                    emptyMessage="No tickets found with current filters."
+                    getRowId={(row) => String(row.id)}
+                    emptyMessage={loading ? "Loading tickets..." : "No tickets found with current filters."}
                     pagination={{
-                        currentPage: 1,
-                        totalPages: 3,
-                        pageSize: filteredTickets.length,
-                        totalItems: tickets.length,
+                        currentPage: page,
+                        totalPages,
+                        pageSize: perPage,
+                        totalItems,
+                        onPageChange: setPage,
                     }}
                 />
             </div>

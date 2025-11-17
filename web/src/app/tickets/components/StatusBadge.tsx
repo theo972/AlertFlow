@@ -1,39 +1,49 @@
-import React from "react";
-import { Badge } from "../../../components/ui/Badge.tsx";
-import type {Status} from "../types/ticket-types.ts";
+import type { Status } from "../types/ticket-types";
 
 type StatusBadgeProps = {
     status: Status;
 };
 
-const STATUS_STYLES: Record<Status, { label: string; classes: string }> = {
-    "To Do": {
-        label: "To Do",
-        classes: "bg-slate-700/80 text-slate-200 border border-slate-500/60",
+const statues: Record<
+    Status,
+    { label: string; classes: string; dotClasses: string }
+> = {
+    open: {
+        label: "Open",
+        classes: "border border-sky-500/30 bg-sky-500/10 text-sky-300",
+        dotClasses: "bg-sky-400",
     },
-    "In Progress": {
-        label: "In Progress",
-        classes: "bg-amber-500/10 text-amber-300 border border-amber-500/30",
+    in_progress: {
+        label: "In progress",
+        classes: "border border-amber-500/30 bg-amber-500/10 text-amber-300",
+        dotClasses: "bg-amber-400",
     },
-    "For Testing": {
-        label: "For Testing",
-        classes: "bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/30",
+    resolved: {
+        label: "Resolved",
+        classes: "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+        dotClasses: "bg-emerald-400",
     },
-    "For Release": {
-        label: "For Release",
-        classes: "bg-sky-500/10 text-sky-300 border border-sky-500/30",
-    },
-    Done: {
-        label: "Done",
-        classes: "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30",
-    },
-    Returned: {
-        label: "Returned",
-        classes: "bg-rose-500/10 text-rose-300 border border-rose-500/30",
+    closed: {
+        label: "Closed",
+        classes: "border border-slate-500/30 bg-slate-500/10 text-slate-300",
+        dotClasses: "bg-slate-400",
     },
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-    const cfg = STATUS_STYLES[status];
-    return <Badge className={cfg.classes}>{cfg.label}</Badge>;
+    const config = statues[status];
+    if (!config) {
+        return (
+            <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900/70 px-2 py-0.5 text-xs text-slate-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                {status}
+            </span>
+        );
+    }
+    return (
+        <span className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium " + config.classes}>
+            <span className={"h-1.5 w-1.5 rounded-full " + config.dotClasses}/>
+            {config.label}
+        </span>
+    );
 }

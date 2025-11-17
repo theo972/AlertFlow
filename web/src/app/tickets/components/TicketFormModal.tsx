@@ -12,31 +12,24 @@ type TicketFormModalProps = {
     onSubmit: (values: TicketFormValues) => void;
 };
 
-const PRIORITIES: Priority[] = ["Low", "Medium", "High", "Urgent"];
-const STATUSES: Status[] = [
-    "To Do",
-    "In Progress",
-    "For Testing",
-    "For Release",
-    "Done",
-    "Returned",
-];
+const PRIORITIES: Priority[] = ["low", "medium", "high"];
+const STATUSES: Status[] = ["open", "in_progress", "resolved", "closed"];
 
 const DEFAULT_VALUES: TicketFormValues = {
     title: "",
     platform: "",
     category: "Bug",
-    priority: "Medium",
+    priority: "medium",
     team: "Frontend",
     assignee: "",
     submittedBy: "",
-    status: "To Do",
+    status: "open",
     description: "",
 };
 
 type TabKey = "main" | "details";
 
-export function TicketFormModal({open, mode, initialValues, onCancel, onSubmit,}: TicketFormModalProps) {
+export function TicketFormModal({open, mode, initialValues, onCancel, onSubmit}: TicketFormModalProps) {
     const [activeTab, setActiveTab] = useState<TabKey>("main");
     const [form, setForm] = useState<TicketFormValues>(DEFAULT_VALUES);
 
@@ -68,7 +61,7 @@ export function TicketFormModal({open, mode, initialValues, onCancel, onSubmit,}
             title,
             platform,
             team: form.team.trim() || "Frontend",
-            assignee: form.assignee?.trim() || "Unassigned",
+            assignee: form.assignee?.toString().trim() || "Unassigned",
             submittedBy: form.submittedBy?.trim() || "Unknown",
             description: form.description?.trim() || undefined,
         };
@@ -76,14 +69,14 @@ export function TicketFormModal({open, mode, initialValues, onCancel, onSubmit,}
         onSubmit(cleaned);
     };
 
-    const title = mode === "create" ? "Create Ticket" : "Edit Ticket";
+    const modalTitle = mode === "create" ? "Create Ticket" : "Edit Ticket";
     const primaryLabel = mode === "create" ? "Create" : "Save changes";
 
     return (
         <Modal
             open={open}
             onClose={onCancel}
-            title={title}
+            title={modalTitle}
             footer={
                 <>
                     <button
@@ -103,7 +96,6 @@ export function TicketFormModal({open, mode, initialValues, onCancel, onSubmit,}
                 </>
             }
         >
-            {/* Onglets */}
             <div className="mb-4 flex gap-1 rounded-full bg-slate-900/80 p-1 text-xs">
                 <button
                     type="button"
@@ -243,7 +235,7 @@ export function TicketFormModal({open, mode, initialValues, onCancel, onSubmit,}
                                     type="text"
                                     className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
                                     placeholder="John Doe"
-                                    value={form.assignee}
+                                    value={form.assignee ?? ""}
                                     onChange={(e) => handleChange("assignee")(e.target.value)}
                                 />
                             </div>

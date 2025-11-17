@@ -1,25 +1,19 @@
-export type Priority = "Low" | "Medium" | "High" | "Urgent";
+export type Priority = "low" | "medium" | "high";
 
-export type Status =
-    | "To Do"
-    | "In Progress"
-    | "For Testing"
-    | "For Release"
-    | "Done"
-    | "Returned";
+export type Status = "open" | "in_progress" | "resolved" | "closed";
 
 export type Ticket = {
-    id: string;
+    id: number;
     title: string;
     platform: string;
     category: string;
     priority: Priority;
     team: string;
-    assignee: string;
+    assignee: string | null;
     submittedBy: string;
-    date: string;
     status: Status;
-    description?: string;
+    description: string | null;
+    createdAt: string;
 };
 
 export type TicketFormValues = {
@@ -28,8 +22,8 @@ export type TicketFormValues = {
     category: string;
     priority: Priority;
     team: string;
-    assignee: string;
+    assignee?: string | null;
     submittedBy: string;
     status: Status;
-    description?: string;
+    description?: string | null;
 };
