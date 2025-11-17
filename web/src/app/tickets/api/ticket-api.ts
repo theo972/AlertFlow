@@ -11,10 +11,7 @@ export type TicketSearchPayload = {
 
 export type TicketSearchResponse = {
     data: Ticket[];
-    page: number;
-    perPage: number;
     total: number;
-    totalPages: number;
 };
 
 export async function searchTickets(params: {

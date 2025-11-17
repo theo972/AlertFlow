@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { DataTable } from "../../components/table/DataTable";
 import { PriorityBadge } from "./components/PriorityBadge";
 import { StatusBadge } from "./components/StatusBadge";
@@ -17,31 +17,41 @@ export default function TicketsPage() {
     const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [showEditPopup, setShowEditPopup] = useState(false);
+
     const [search, setSearch] = useState("");
     const [platformFilter, setPlatformFilter] = useState("All");
     const [categoryFilter, setCategoryFilter] = useState("All");
     const [priorityFilter, setPriorityFilter] = useState("All");
     const [statusFilter, setStatusFilter] = useState("All");
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-
     const [page, setPage] = useState(1);
     const [perPage] = useState(10);
-    const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [loading, setLoading] = useState(false);
+    const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+
+    useEffect(() => {
+        setPage(1);
+    }, [search, platformFilter, categoryFilter, priorityFilter, statusFilter]);
 
     useEffect(() => {
         const load = async () => {
             try {
                 setLoading(true);
+                const filters: Record<string, unknown> = {};
+                if (platformFilter !== "All") filters.platform = platformFilter;
+                if (categoryFilter !== "All") filters.category = categoryFilter;
+                if (priorityFilter !== "All") filters.priority = priorityFilter;
+                if (statusFilter !== "All") filters.status = statusFilter;
+                if (search.trim() !== "") filters.title = search.trim();
                 const res = await searchTickets({
                     page,
                     perPage,
                     order: "desc",
-                    filters: {},
+                    filters,
                 });
+
                 setTickets(res.data);
-                setTotalPages(res.totalPages);
                 setTotalItems(res.total);
             } catch (e) {
                 console.error(e);
@@ -50,25 +60,12 @@ export default function TicketsPage() {
             }
         };
         load();
-    }, [page, perPage]);
+    }, [page, perPage, search, platformFilter, categoryFilter, priorityFilter, statusFilter]);
 
-    const pendingCount = tickets.filter((ticket) => ticket.status === "open").length;
-    const inProgressCount = tickets.filter((ticket) => ticket.status === "in_progress").length;
-    const resolvedCount = tickets.filter((ticket) => ticket.status === "resolved").length;
-    const closedCount = tickets.filter((ticket) => ticket.status === "closed").length;
-
-    const filteredTickets = useMemo(() => {
-        return tickets.filter((ticket) => {
-            if (search && !ticket.title.toLowerCase().includes(search.toLowerCase()) && !String(ticket.id).toLowerCase().includes(search.toLowerCase())) {
-                return false;
-            }
-            if (platformFilter !== "All" && ticket.platform !== platformFilter) return false;
-            if (categoryFilter !== "All" && ticket.category !== categoryFilter) return false;
-            if (priorityFilter !== "All" && ticket.priority !== (priorityFilter as Priority)) return false;
-            return !(statusFilter !== "All" && ticket.status !== (statusFilter as Status));
-        });
-    }, [tickets, search, platformFilter, categoryFilter, priorityFilter, statusFilter]);
-
+    const pendingCount = tickets.filter((t) => t.status === "open").length;
+    const inProgressCount = tickets.filter((t) => t.status === "in_progress").length;
+    const resolvedCount = tickets.filter((t) => t.status === "resolved").length;
+    const closedCount = tickets.filter((t) => t.status === "closed").length;
     const platforms = Array.from(new Set(tickets.map((ticket) => ticket.platform)));
     const categories = Array.from(new Set(tickets.map((ticket) => ticket.category)));
 
@@ -86,7 +83,10 @@ export default function TicketsPage() {
 
     const handleCreateSubmit = async (values: TicketFormValues) => {
         const created = await createTicket(values);
-        setTickets((prev) => [created, ...prev]);
+        if (page === 1) {
+            setTickets((prev) => [created, ...prev]);
+        }
+        setTotalItems((prev) => prev + 1);
         setIsCreateOpen(false);
     };
 
@@ -101,6 +101,7 @@ export default function TicketsPage() {
         if (!currentTicket) return;
         await deleteTicket(currentTicket.id);
         setTickets((prev) => prev.filter((ticket) => ticket.id !== currentTicket.id));
+        setTotalItems((prev) => Math.max(0, prev - 1));
         setShowDeletePopup(false);
         setCurrentTicket(null);
     };
@@ -274,7 +275,7 @@ export default function TicketsPage() {
 
                 <DataTable
                     columns={columns}
-                    data={filteredTickets}
+                    data={tickets}
                     getRowId={(row) => String(row.id)}
                     emptyMessage={loading ? "Loading tickets..." : "No tickets found with current filters."}
                     pagination={{
