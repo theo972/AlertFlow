@@ -1,23 +1,21 @@
-export type UserRole = "Owner" | "Admin" | "Member";
-export type UserStatus = "Active" | "Invited" | "Suspended";
+// src/app/users/types/user-types.ts
+
+export type UserStatus = "Active" | "Invited" | "Disabled";
 
 export type User = {
-    id: string;
-    name: string;
+    id: number;
     email: string;
-    role: UserRole;
+    name: string;
     permissions: string[];
-    lastActive: string;
-    dateAdded: string;
+    roles: string[];
+    lastActive: string | null;
     status: UserStatus;
+    createdAt: string;
 };
 
 export type UserFormValues = {
     name: string;
     email: string;
-    role: UserRole;
-    permissions: string[];
-    lastActive: string;
-    dateAdded: string;
     status: UserStatus;
+    password?: string;
 };

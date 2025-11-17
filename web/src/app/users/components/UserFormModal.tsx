@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Modal } from "../../../components/ui/Modal";
-import type { UserFormValues, UserRole, UserStatus } from "../types/user-types";
+import type { UserFormValues, UserStatus } from "../types/user-types";
 
 type Mode = "create" | "edit";
 type UserFormModalProps = {
@@ -11,16 +11,13 @@ type UserFormModalProps = {
     onSubmit: (values: UserFormValues) => void;
 };
 
-const ROLES: UserRole[] = ["Owner", "Admin", "Member"];
-const STATUSES: UserStatus[] = ["Active", "Invited", "Suspended"];
+const STATUSES: UserStatus[] = ["Active", "Invited", "Disabled"];
+
 const DEFAULT_VALUES: UserFormValues = {
     name: "",
     email: "",
-    role: "Member",
-    permissions: [],
-    lastActive: "",
-    dateAdded: "",
     status: "Active",
+    password: "",
 };
 
 export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: UserFormModalProps) {
@@ -32,12 +29,13 @@ export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: 
         setForm({
             ...DEFAULT_VALUES,
             ...(initialValues ?? {}),
+            password: "",
         });
     }, [open, initialValues]);
 
     const handleChange =
         (key: keyof UserFormValues) =>
-            (value: string | UserRole | UserStatus | string[]) => {
+            (value: string | UserStatus) => {
                 setForm((prev) => ({
                     ...prev,
                     [key]: value,
@@ -46,22 +44,22 @@ export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         const name = form.name.trim();
         const email = form.email.trim();
-
         if (!name || !email) {
             return;
         }
+        const cleaned: UserFormValues = {...form, name, email};
 
-        const cleaned: UserFormValues = {
-            ...form,
-            name,
-            email,
-            lastActive: form.lastActive || "—",
-            dateAdded: form.dateAdded || "—",
-            permissions: form.permissions ?? [],
-        };
+        if (mode === "create") {
+            const password = (form.password ?? "").trim();
+            if (!password) {
+                return;
+            }
+            cleaned.password = password;
+        } else {
+            delete cleaned.password;
+        }
 
         onSubmit(cleaned);
     };
@@ -126,26 +124,22 @@ export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: 
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {mode === "create" && (
                     <div>
                         <label className="mb-1 block text-xs font-medium text-slate-300">
-                            Role
+                            Password
                         </label>
-                        <select
-                            className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                            value={form.role}
-                            onChange={(e) =>
-                                handleChange("role")(e.target.value as UserRole)
-                            }
-                        >
-                            {ROLES.map((role) => (
-                                <option key={role} value={role}>
-                                    {role}
-                                </option>
-                            ))}
-                        </select>
+                        <input
+                            type="password"
+                            className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                            placeholder="Choose a secure password"
+                            value={form.password ?? ""}
+                            onChange={(e) => handleChange("password")(e.target.value)}
+                        />
                     </div>
+                )}
 
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                     <div>
                         <label className="mb-1 block text-xs font-medium text-slate-300">
                             Status
@@ -164,39 +158,6 @@ export function UserFormModal({open, mode, initialValues, onCancel, onSubmit,}: 
                             ))}
                         </select>
                     </div>
-
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-slate-300">
-                            Date added
-                        </label>
-                        <input
-                            type="text"
-                            className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                            placeholder="Mar 4, 2024"
-                            value={form.dateAdded}
-                            onChange={(e) => handleChange("dateAdded")(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-300">
-                        Permissions (comma separated)
-                    </label>
-                    <input
-                        type="text"
-                        className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                        placeholder="Admin, Data Export..."
-                        value={form.permissions.join(", ")}
-                        onChange={(e) =>
-                            handleChange("permissions")(
-                                e.target.value
-                                    .split(",")
-                                    .map((permission) => permission.trim())
-                                    .filter(Boolean),
-                            )
-                        }
-                    />
                 </div>
             </form>
         </Modal>
